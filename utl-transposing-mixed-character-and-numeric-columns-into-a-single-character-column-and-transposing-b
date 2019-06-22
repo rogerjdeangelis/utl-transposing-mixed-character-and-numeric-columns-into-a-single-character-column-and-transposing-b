@@ -1,0 +1,196 @@
+Transposing mixed character and numeric data into a single character column and transposing back                                
+                                                                                                                                
+Dictionary and highly normalized data structures are very useful.                                                               
+                                                                                                                                
+This is a great question. I generalize the ops question.                                                                        
+                                                                                                                                
+  Steps                                                                                                                         
+                                                                                                                                
+    1. Normalize have table (one variable(both numeric and character) x value)                                                  
+    2. Create original have table from normalized table                                                                         
+                                                                                                                                
+  This solution is made possible by                                                                                             
+                                                                                                                                
+           Alea Iacta,  https://github.com/clindocu  (gather macro)                                                             
+           Søren Lassen, s.lassen@post.tele.dk (varlist macro)                                                                  
+           Arthur Tabachneck, Xia Ke Shan, Robert Virgile and Joe Whitehurst (transpose macro)                                  
+                                                                                                                                
+                                                                                                                                
+We transpose a mixture of numeric and character columns into a single variable and                                              
+transfer back without losing any presision.                                                                                     
+                                                                                                                                
+SAS Forum                                                                                                                       
+https://tinyurl.com/y6y6tkn4                                                                                                    
+https://communities.sas.com/t5/SAS-Programming/Proc-Transpose-character-numeric-issue/m-p/567153                                
+                                                                                                                                
+*_                   _                                                                                                          
+(_)_ __  _ __  _   _| |_                                                                                                        
+| | '_ \| '_ \| | | | __|                                                                                                       
+| | | | | |_) | |_| | |_                                                                                                        
+|_|_| |_| .__/ \__,_|\__|                                                                                                       
+        |_|                                                                                                                     
+;                                                                                                                               
+data have;                                                                                                                      
+retain byvar;                                                                                                                   
+format a 6.2 b time5. c comma7. d date9. e $5.;                                                                                 
+input byvar a b c d e;                                                                                                          
+cards4;                                                                                                                         
+1 10.1 789 12300 21001 roger                                                                                                    
+2 40.99 875 81056 19089 jerry                                                                                                   
+;;;;                                                                                                                            
+run;quit;                                                                                                                       
+                                                                                                                                
+/*                                                                                                                              
+                                                                                                                                
+      Variables in Creation Order                                                                                               
+                                                                                                                                
+#    Variable    Type    Len    Format                                                                                          
+                                                                                                                                
+1    BYVAR       Num       8                                                                                                    
+2    A           Num       8    6.2                                                                                             
+3    B           Num       8    TIME5.                                                                                          
+4    C           Num       8    COMMA7.                                                                                         
+5    D           Num       8    DATE9.                                                                                          
+6    E           Char      5    $5.                                                                                             
+                                                                                                                                
+FORMATED                                                                                                                        
+                                                                                                                                
+WORK.AVE total obs=2                                                                                                            
+                                                                                                                                
+  BYVAR      A       B        C           D          E                                                                          
+                                                                                                                                
+    1      10.10    0:13    12,300    01JUL2017    roger                                                                        
+    2      40.99    0:14    81,056    06APR2012    jerry                                                                        
+                                                                                                                                
+DEFAULT FORMATTING                                                                                                              
+                                                                                                                                
+WORK.HAVE total obs=2                                                                                                           
+                                                                                                                                
+  BYVAR      A       B       C        D        E                                                                                
+                                                                                                                                
+    1      10.10    789    12300    21001    roger                                                                              
+    2      40.99    875    81056    19089    jerry                                                                              
+                                                                                                                                
+                                                                                                                                
+*            _               _                                                                                                  
+  ___  _   _| |_ _ __  _   _| |_                                                                                                
+ / _ \| | | | __| '_ \| | | | __|                                                                                               
+| (_) | |_| | |_| |_) | |_| | |_                                                                                                
+ \___/ \__,_|\__| .__/ \__,_|\__|                                                                                               
+                |_|                                                                                                             
+;                                                                                                                               
+                                                                                                                                
+/*                                                                                                                              
+                                                                                                                                
+THREE STEPS                                                                                                                     
+                                                                                                                                
+WORK WANTGTH total obs=10                                                                                                       
+                                                                                                                                
+                  ALL                                                                                                           
+                  CHARACTER                                                                                                     
+                  ---------                                                                                                     
+  BYVAR    VAR    V            F          T                                                                                     
+                                                                                                                                
+    1       A     10.10        F6.2       N                                                                                     
+    1       B     0:13         TIME5.     N                                                                                     
+    1       C     12,300       COMMA7.    N                                                                                     
+    1       D     01JUL2017    DATE9.     N                                                                                     
+    1       E     roger        $5.        C                                                                                     
+    2       A     40.99        F6.2       N                                                                                     
+    2       B     0:14         TIME5.     N                                                                                     
+    2       C     81,056       COMMA7.    N                                                                                     
+    2       D     06APR2012    DATE9.     N                                                                                     
+    2       E     jerry        $5.        C                                                                                     
+                                                                                                                                
+                                                                                                                                
+THE NEXT TWO STEPS RECREATE ORIGINAL HAVE TABLE                                                                                 
+                                                                                                                                
+BYVAR   V_A    F_A    T_A    V_B    F_B     T_B    V_C      F_C      T_C      V_D       F_D    T_D    V_E    F_E   T_E          
+                                                                                                                                
+  1    10.10   F6.2    N    0:13   TIME5.    N    12,300   COMMA7.    N    01JUL2017   DATE9.    N    roger   $5.    C          
+  2    40.99   F6.2    N    0:14   TIME5.    N    81,056   COMMA7.    N    06APR2012   DATE9.    N    jerry   $5.    C          
+                                                                                                                                
+                                                                                                                                
+RECREATE THE ORIGINAL EXTERNAL HAVE TABLE FROM THE NORMALIZED FORM                                                              
+                                                                                                                                
+                                                                                                                                
+WANTBAC total obs=2                                                                                                             
+                                                                                                                                
+  BYVAR      A       B        C           D          E                                                                          
+                                                                                                                                
+    1      10.10    0:13    12,300    01JUL2017    roger                                                                        
+    2      40.99    0:14    81,056    06APR2012    jerry                                                                        
+                                                                                                                                
+   Variables in Creation Order                                                                                                  
+                                                                                                                                
+  Variable    Type    Len    Format                                                                                             
+                                                                                                                                
+  BYVAR       Num       8                                                                                                       
+  A           Num       8    F6.2                                                                                               
+  B           Num       8    TIME5.                                                                                             
+  C           Num       8    COMMA7.                                                                                            
+  D           Num       8    DATE9.                                                                                             
+  E           Char      5    $5.                                                                                                
+                                                                                                                                
+WANTBAC total obs=2                                                                                                             
+                                                                                                                                
+Obs    BYVAR      A       B        C           D          E                                                                     
+                                                                                                                                
+ 1       1      10.10    0:13    12,300    01JUL2017    roger                                                                   
+ 2       2      40.99    0:14    81,056    06APR2012    jerry                                                                   
+                                                                                                                                
+                                                                                                                                
+*                                                                                                                               
+ _ __  _ __ ___   ___ ___  ___ ___                                                                                              
+| '_ \| '__/ _ \ / __/ _ \/ __/ __|                                                                                             
+| |_) | | | (_) | (_|  __/\__ \__ \                                                                                             
+| .__/|_|  \___/ \___\___||___/___/                                                                                             
+|_|                                                                                                                             
+;                                                                                                                               
+                                                                                                                                
+proc datasets lib=work;                                                                                                         
+delete have wantgth wantxo wantbac;                                                                                             
+run;quit;                                                                                                                       
+                                                                                                                                
+data have;                                                                                                                      
+retain byvar;                                                                                                                   
+format a 6.2 b time5. c comma7. d date9. e $5.;                                                                                 
+input byvar a b c d e;                                                                                                          
+cards4;                                                                                                                         
+1 10.1 789 12300 21001 roger                                                                                                    
+2 40.99 875 81056 19089 jerry                                                                                                   
+;;;;                                                                                                                            
+run;quit;                                                                                                                       
+                                                                                                                                
+%utl_gather(have,var,v,byvar,wantgth(rename=(_coltyp=t _colformat=f)),WithFormats=Y);                                           
+                                                                                                                                
+%utl_transpose(data=wantgth, out=wantxpo, by=byvar, id=var, Guessingrows=1000, delimiter=_,var=v t f );                         
+                                                                                                                                
+data _null_;                                                                                                                    
+   length fmts $200;                                                                                                            
+   set wantxpo(obs=1);                                                                                                          
+   array fs    f_:;                                                                                                             
+   array vs    v_:;                                                                                                             
+   do over fs;                                                                                                                  
+     fmts=catx(" ",fmts,substr(vname(vs),3),fs);                                                                                
+   end;                                                                                                                         
+   call symputx("fmts",fmts);                                                                                                   
+   rc=dosubl("                                                                                                                  
+     data wantbac;                                                                                                              
+         set wantxpo;                                                                                                           
+         format &fmts;                                                                                                          
+         a=inputn(v_a,f_a);                                                                                                     
+         b=inputn(v_b,f_b);                                                                                                     
+         c=inputn(v_c,f_c);                                                                                                     
+         d=inputn(v_d,f_d);                                                                                                     
+         e=inputc(v_e,f_e);                                                                                                     
+         drop %varlist(wantxpo,prx=/_/);                                                                                        
+     run;quit;                                                                                                                  
+   ");                                                                                                                          
+   stop;                                                                                                                        
+run;quit;                                                                                                                       
+                                                                                                                                
+Proc print data=wantbac;                                                                                                        
+run;quit;                                                                                                                       
+                                                                                                                                
+                                                                                                                                
